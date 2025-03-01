@@ -1,80 +1,142 @@
 <template>
   <main>
-    <h1>Coin Converter</h1>
+    <h1>Currency Converter</h1>
 
-    <div class="valueToConvert">
-      <input type="number" v-model="valorDolar">
+    <p>Digite o valor a ser convertido e escolha a moeda para conversão</p>
 
-      <v-select 
-        id="selectCurrency"
-        :options="currencyValues"
-        label="text"
-        :reduce="currencyValue => currencyValue.flag"
-        v-model="moedaSelecionada"
-      >
-        <template #option="{ image, text }">
-          <img :src="image" :alt="'Icone da badeira do ', text">
-          <span>{{ text }}</span>
-        </template>
-      </v-select>
-    </div>
+    <div class="group">
+      <div class="valueToConvert">
+        <input
+          type="number"
+          v-model="valorParaConverter" 
+        />
 
-    <div v-if="convertedValue" class="valueConverted">
-      <div class="inputFake">
-        {{ convertedValue }}
+        <v-select
+          id="selectCurrency"
+          :options="currencyValues"
+          label="text"
+          :reduce="(currencyValue) => currencyValue.flag"
+          :selectable="(currencyValue) => currencyValue.flag !== moedaParaConverter"
+          v-model="moedaParaConverter"
+        >
+          <template #selected-option="{ image, text }">
+            <img :src="image" :alt="('Icone da badeira do ', text)" />
+            <span>{{ text }}</span>
+          </template>
+
+          <template #option="{ image, text }">
+            <img
+              :src="image"
+              :alt="('Icone da badeira do ', text)" />
+            <span>{{ text }}</span>
+          </template>
+        </v-select>
       </div>
 
-      <v-select 
-        id="selectCurrency"
-        :options="currencyValues"
-        label="text"
-        :reduce="currencyValue => currencyValue.flag"
-        v-model="moedaSelecionada"
+      <button class="swap-button" @click="swapConversion">
+        <img src="./assets/icon-swap.svg" alt="">
+      </button>
+
+      <div
+        v-if="valorConvertido"
+        class="valueConverted"
       >
-        <template #option="{ image, text }">
-          <img :src="image" :alt="'Icone da badeira do ', text">
-          <span>{{ text }}</span>
-        </template>
-      </v-select>
+
+        <div class="inputFake">
+          {{ valorConvertido }}
+        </div>
+
+        <v-select
+          id="selectCurrency"
+          :options="currencyValues"
+          label="text"
+          :reduce="(currencyValue) => currencyValue.flag"
+          :selectable="(currencyValue) => currencyValue.flag !== moedaConvertida"
+          v-model="moedaConvertida"
+        >
+          <template #selected-option="{ image, text }">
+            <img
+              :src="image"
+              :alt="('Icone da badeira do ', text)" />
+            <span>{{ text }}</span>
+          </template>
+
+          <template #option="{ image, text }">
+            <img
+              :src="image"
+              :alt="('Icone da badeira do ', text)" />
+            <span>{{ text }}</span>
+          </template>
+        </v-select>
+      </div>
     </div>
   </main>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import api from './service/api.js'
+import { onMounted, ref, watch } from "vue";
+import api from "./service/api.js";
 
 const currencyValues = ref([
-  { flag: 'BRL', text: 'Real', image: 'https://flagcdn.com/br.svg' },
-  { flag: 'EUR', text: 'Euro', image: 'https://flagcdn.com/eu.svg' },
-  { flag: 'USD', text: 'Dolar', image: 'https://flagcdn.com/us.svg' },
-])
+  { id: 1, flag: "BRL", text: "REAL", image: "https://flagcdn.com/br.svg" },
+  { id: 2, flag: "EUR", text: "EURO", image: "https://flagcdn.com/eu.svg" },
+  { id: 3, flag: "USD", text: "DOLAR", image: "https://flagcdn.com/us.svg" },
+]);
 
-let valorDolar = ref(1)
-let convertedValue = ref(0)
-let rateValue = null
-let moedaSelecionada = ref('USD')
+let valorParaConverter = ref(1);
+let valorConvertido = ref(0);
+let valorDaTaxa = null;
+let moedaConvertida = ref("USD");
+let moedaParaConverter = ref("BRL");
 
-async function fetchAPI (valorDolar, moedaSelecionada) {
+async function fetchAPI(
+  valorParaConverter,
+  moedaConvertida,
+  moedaParaConverter
+) {
   try {
-    if (moedaSelecionada) {
-      const response = await api.get(moedaSelecionada)
-  
-      rateValue = response.data.rates.BRL
-      convertedValue.value = (rateValue * valorDolar).toFixed(2)
+    if (moedaConvertida) {
+      const response = await api.get(moedaConvertida);
+
+      valorDaTaxa = response.data.rates[moedaParaConverter];
+
+      valorConvertido.value = (valorDaTaxa * valorParaConverter).toFixed(2);
     }
   } catch (error) {
-    console.error('Erro ao buscar moedas: ', error)
+    console.error("Erro ao buscar moedas: ", error);
   }
 }
 
-watch([valorDolar, () => moedaSelecionada.value], ([newValorDolar, newMoedaSelecionada]) => {  
-  fetchAPI(newValorDolar, newMoedaSelecionada)
-})
+function swapConversion() {
+  [moedaConvertida.value, moedaParaConverter.value] = [moedaParaConverter.value, moedaConvertida.value]
+}
+
+watch(
+  [
+    valorParaConverter,
+    () => moedaConvertida.value,
+    () => moedaParaConverter.value,
+  ],
+  ([
+    newValorParaConverter,
+    newmoedaConvertida,
+    newmoedaParaConverter,
+  ]) => {
+    fetchAPI(
+      newValorParaConverter,
+      newmoedaConvertida,
+      newmoedaParaConverter
+    );
+  }
+);
 
 onMounted(() => {
-  fetchAPI(valorDolar.value, moedaSelecionada.value)
-})
+  fetchAPI(
+    valorParaConverter.value,
+    moedaConvertida.value,
+    moedaParaConverter.value
+  );
+});
 </script>
 
 <style scoped>
@@ -85,10 +147,10 @@ body {
 }
 
 .inputFake {
-  background-color: #3B3B3B;
+  background-color: #3b3b3b;
   width: 177px;
   text-align: start;
-  color: #FFF;
+  color: #fff;
 }
 .logo {
   height: 6em;
@@ -103,6 +165,13 @@ body {
   filter: drop-shadow(0 0 2em #42b883aa);
 }
 
+.swap-button {
+  padding: 0;
+  background: none;
+  width: 30px;
+  height: 30px;
+}
+
 .valueToConvert,
 .valueConverted {
   display: flex;
@@ -110,10 +179,16 @@ body {
 }
 
 #selectCurrency img {
-  width: 35px; 
-  height: 35px; 
-  border-radius: 50%; 
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
   object-fit: cover;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 </style>
 
