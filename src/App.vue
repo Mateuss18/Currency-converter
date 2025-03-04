@@ -1,10 +1,12 @@
 <template>
   <main>
-    <h1>Currency Converter</h1>
+    <div class="text">
+      <h1 class="title">Conversor de Moedas</h1>
+  
+      <p class="subtitle">Digite o valor a ser convertido e escolha a moeda para conversão</p>
+    </div>
 
-    <p>Digite o valor a ser convertido e escolha a moeda para conversão</p>
-
-    <div class="group">
+    <div class="content">
       <div class="valueToConvert">
         <input
           type="number"
@@ -18,6 +20,7 @@
           :reduce="(currencyValue) => currencyValue.flag"
           :selectable="(currencyValue) => currencyValue.flag !== moedaParaConverter && currencyValue.flag !== moedaConvertida"
           v-model="moedaParaConverter"
+          :clearable="false"
         >
           <template #selected-option="{ image, text }">
             <img :src="image" :alt="('Icone da badeira do ', text)" />
@@ -49,6 +52,7 @@
           :reduce="(currencyValue) => currencyValue.flag"
           :selectable="(currencyValue) => currencyValue.flag !== moedaConvertida && currencyValue.flag !== moedaParaConverter"
           v-model="moedaConvertida"
+          :clearable="false"
         >
           <template #selected-option="{ image, text }">
             <img
@@ -74,9 +78,11 @@ import { onMounted, ref, watch } from "vue";
 import api from "./service/api.js";
 
 const currencyValues = ref([
-  { id: 1, flag: "BRL", text: "REAL", image: "https://flagcdn.com/br.svg" },
-  { id: 2, flag: "EUR", text: "EURO", image: "https://flagcdn.com/eu.svg" },
-  { id: 3, flag: "USD", text: "DOLAR", image: "https://flagcdn.com/us.svg" },
+  { id: 1, flag: "BRL", text: "Real", image: "https://flagcdn.com/br.svg" },
+  { id: 2, flag: "USD", text: "Dolar", image: "https://flagcdn.com/us.svg" },
+  { id: 3, flag: "EUR", text: "Euro", image: "https://flagcdn.com/eu.svg" },
+  { id: 4, flag: "GBP", text: "Libra Esterlina", image: "https://flagcdn.com/gb.svg" },
+  { id: 5, flag: "ARS", text: "Peso Argentino", image: "https://flagcdn.com/ar.svg" },
 ]);
 
 const valorParaConverter = ref(1);
@@ -93,9 +99,6 @@ async function fetchAPI(
   try {
     if (moedaParaConverter && moedaConvertida) {
       const response = await api.get(moedaParaConverter);
-
-      console.log(response);
-      
 
       valorDaTaxa = response.data.rates[moedaConvertida];
       // valorDaTaxa = response.data.conversion_rates[moedaParaConverter];
@@ -142,12 +145,23 @@ onMounted(() => {
 <style scoped>
 @import "vue-select/dist/vue-select.css";
 
-body {
-  background-color: blue;
+.title {
+  font-size: 34px;
+}
+.subtitle {
+  font-size: 18px;
+  margin-bottom: 32px;
+}
+
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .inputFake {
-  background-color: #3b3b3b;
+  background-color: #1e1e1e;
   width: 177px;
   text-align: start;
   color: #fff;
@@ -170,6 +184,7 @@ body {
   background: none;
   width: 30px;
   height: 30px;
+  filter: brightness(100);
 }
 
 .valueToConvert,
@@ -200,5 +215,16 @@ body {
 }
 .vs__dropdown-menu {
   min-width: 120px !important;
+}
+
+.vs__selected {
+  gap: 10px;
+  color: #FFF !important;
+}
+.vs__dropdown-toggle {
+  border-color: #FFF !important;
+}
+.vs__open-indicator {
+  fill: #FFF !important;
 }
 </style>
