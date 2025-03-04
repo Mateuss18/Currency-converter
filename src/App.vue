@@ -16,7 +16,7 @@
           :options="currencyValues"
           label="text"
           :reduce="(currencyValue) => currencyValue.flag"
-          :selectable="(currencyValue) => currencyValue.flag !== moedaParaConverter"
+          :selectable="(currencyValue) => currencyValue.flag !== moedaParaConverter && currencyValue.flag !== moedaConvertida"
           v-model="moedaParaConverter"
         >
           <template #selected-option="{ image, text }">
@@ -37,11 +37,7 @@
         <img src="./assets/icon-swap.svg" alt="">
       </button>
 
-      <div
-        v-if="valorConvertido"
-        class="valueConverted"
-      >
-
+      <div class="valueConverted">
         <div class="inputFake">
           {{ valorConvertido }}
         </div>
@@ -51,7 +47,7 @@
           :options="currencyValues"
           label="text"
           :reduce="(currencyValue) => currencyValue.flag"
-          :selectable="(currencyValue) => currencyValue.flag !== moedaConvertida"
+          :selectable="(currencyValue) => currencyValue.flag !== moedaConvertida && currencyValue.flag !== moedaParaConverter"
           v-model="moedaConvertida"
         >
           <template #selected-option="{ image, text }">
@@ -83,11 +79,11 @@ const currencyValues = ref([
   { id: 3, flag: "USD", text: "DOLAR", image: "https://flagcdn.com/us.svg" },
 ]);
 
-let valorParaConverter = ref(1);
-let valorConvertido = ref(0);
+const valorParaConverter = ref(1);
+const valorConvertido = ref(0);
 let valorDaTaxa = null;
-let moedaConvertida = ref("USD");
-let moedaParaConverter = ref("BRL");
+let moedaParaConverter = ref("USD");
+let moedaConvertida = ref("BRL");
 
 async function fetchAPI(
   valorParaConverter,
@@ -95,10 +91,14 @@ async function fetchAPI(
   moedaParaConverter
 ) {
   try {
-    if (moedaConvertida) {
-      const response = await api.get(moedaConvertida);
+    if (moedaParaConverter && moedaConvertida) {
+      const response = await api.get(moedaParaConverter);
 
-      valorDaTaxa = response.data.rates[moedaParaConverter];
+      console.log(response);
+      
+
+      valorDaTaxa = response.data.rates[moedaConvertida];
+      // valorDaTaxa = response.data.conversion_rates[moedaParaConverter];
 
       valorConvertido.value = (valorDaTaxa * valorParaConverter).toFixed(2);
     }
