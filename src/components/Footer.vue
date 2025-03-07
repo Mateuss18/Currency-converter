@@ -1,6 +1,6 @@
 <template>
   <footer>
-    Feito por <a href="http://" target="_blank" rel="noopener noreferrer">Mateus Lopes</a>
+    Feito por <a href="https://mateuslopes.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Portifolio de quem desenvolveu a página">Mateus Lopes</a>
   </footer>
 </template>
 
