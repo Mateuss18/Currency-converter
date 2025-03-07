@@ -1,7 +1,7 @@
 <template>
   <main>
     <div class="text">
-      <h1 class="title">Conversor de Moedas</h1>
+      <h1 class="title">Converta aqui</h1>
   
       <p class="subtitle">Digite o valor a ser convertido e escolha a moeda para conversão</p>
     </div>
@@ -10,6 +10,7 @@
       <div class="fieldToConvert">
         <input
           type="number"
+          autocomplete="off"
           v-model="valorParaConverter" 
         />
 
@@ -42,8 +43,8 @@
         </v-select>
       </div>
 
-      <button class="swap-button" @click="swapConversion">
-        <img src="../assets/icon-swap.svg" alt="">
+      <button class="swap-button" @click="swapConversion" aria-label="Trocar a conversão">
+        <img src="../assets/icon-swap.svg" alt="Icone de troca">
       </button>
 
       <div class="fieldConverted">
@@ -109,15 +110,43 @@ async function fetchAPI(
       valorDaTaxa = response.data.rates[moedaConvertida];
       // valorDaTaxa = response.data.conversion_rates[moedaParaConverter];
 
-      if(moedaParaConverter !== 'ARS') {
-        valorConvertido.value = (valorDaTaxa * valorParaConverter).toFixed(2);
-      } else {
-        valorConvertido.value = (valorDaTaxa * valorParaConverter).toFixed(5);
-      }
+      const resultado = truncarComCasaExtra(valorDaTaxa * valorParaConverter);
+      valorConvertido.value = resultado;
     }
   } catch (error) {
     console.error("Erro ao buscar moedas: ", error);
   }
+}
+
+function truncarComCasaExtra(valor) {
+  // Converte o número para string
+  let str = valor.toString();
+  
+  // Trata notação científica, se necessário
+  if (str.includes('e')) {
+    str = valor.toFixed(15).replace(/0+$/, '');
+  }
+  
+  // Se não houver ponto decimal, adiciona ",00"
+  if (!str.includes('.')) {
+    return str + ',00';
+  }
+  
+  // Divide em parte inteira e decimal
+  let [parteInteira, parteDecimal] = str.split('.');
+  
+  // Determina a parte decimal final
+  let decimalFinal;
+  if (parteDecimal.length <= 1) {
+    // Para 0 ou 1 casa decimal, completa com zeros até 2 casas
+    decimalFinal = parteDecimal.padEnd(2, '0');
+  } else {
+    // Para 2 ou mais casas, remove o último dígito e garante pelo menos 2 casas
+    decimalFinal = parteDecimal.slice(0, -1).padEnd(2, '0');
+  }
+  
+  // Retorna o número formatado com vírgula
+  return `${parteInteira},${decimalFinal}`;
 }
 
 function swapConversion() {
@@ -183,11 +212,15 @@ main {
   font-weight: 500;
   max-width: 180px;
   height: 58px;
+  background-color: #0c0c0c;
+  border: solid 1px #FFF;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 .resultConverted {
   display: flex;
   align-items: center;
-  background-color: #1e1e1e;
+  background-color: #575757;
   width: 180px;
   height: 58px;
   text-align: start;
@@ -195,6 +228,8 @@ main {
   font-size: 18px;
   font-weight: 600;
   padding-left: 16px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 .swap-button {
   display: flex;
@@ -211,6 +246,9 @@ main {
   display: flex;
   color: #000;
 }
+#selectCurrency {
+  background-color: #0c0c0c;
+}
 #selectCurrency img {
   width: 35px;
   height: 35px;
@@ -226,11 +264,15 @@ main {
   }
 }
 @media (max-width: 550px) {
+  main {
+    padding: 24px;
+  }
   .title {
-    font-size: 28px;
+    font-size: 26px;
+    margin-bottom: 6px;
   }
   .subtitle {
-    font-size: 16px;
+    font-size: 14px;
     margin-bottom: 22px;
   }
   .fieldToConvert input,
@@ -246,6 +288,17 @@ main {
     height: 56px;
   }
 }
+@media (max-width: 405px) {
+  main {
+    padding: 16px;
+  }
+  .fieldToConvert input, 
+  .resultConverted {
+    font-size: 14px;
+    max-width: 90px;
+    padding-left: 12px;
+  }
+}
 </style>
 
 <style>
@@ -259,7 +312,7 @@ main {
 .vs__dropdown-menu,
 .svs__selected-options,
 #selectCurrency {
-  min-width: 214px !important;
+  min-width: 218px !important;
 }
 .vs__dropdown-option span {
   width: 100% !important;
