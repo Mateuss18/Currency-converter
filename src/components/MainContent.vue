@@ -6,66 +6,73 @@
     </div>
 
     <div class="content">
-      <div class="fieldToConvert">
-        <input
-          type="number"
-          autocomplete="off"
-          v-model="valorParaConverter"
-          min="0"
-          onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"
-          aria-label="Valor a ser convertido"
-        />
-
-        <v-select
-          id="selectCurrency"
-          :options="currencyValues"
-          label="text"
-          :reduce="(currencyValue) => currencyValue.flag"
-          :selectable="(currencyValue) => currencyValue.flag !== moedaParaConverter && currencyValue.flag !== moedaConvertida"
-          v-model="moedaParaConverter"
-          :clearable="false"
-        >
-          <template #selected-option="{ image, text }">
-            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
-            <span>{{ text }}</span>
-          </template>
-          <template #option="{ image, text }">
-            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
-            <span>{{ text }}</span>
-          </template>
-          <template #no-options>
-            <span class="custom-no-options">Nenhuma opção encontrada</span>
-          </template>
-        </v-select>
+      <div class="fieldToConvert campo">
+        <label for="valorParaConverter" class="label">Quantia</label>
+        <div class="label-wrapper">
+          <input
+            id="valorParaConverter"
+            type="number"
+            autocomplete="off"
+            v-model="valorParaConverter"
+            min="0"
+            onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"
+            aria-label="Valor a ser convertido"
+          />
+  
+          <v-select
+            id="selectCurrency"
+            :options="currencyValues"
+            label="text"
+            :reduce="(currencyValue) => currencyValue.flag"
+            :selectable="(currencyValue) => currencyValue.flag !== moedaParaConverter && currencyValue.flag !== moedaConvertida"
+            v-model="moedaParaConverter"
+            :clearable="false"
+          >
+            <template #selected-option="{ image, text }">
+              <img :src="image" :alt="('Icone da bandeira do ' + text)" />
+              <span>{{ text }}</span>
+            </template>
+            <template #option="{ image, text }">
+              <img :src="image" :alt="('Icone da bandeira do ' + text)" />
+              <span>{{ text }}</span>
+            </template>
+            <template #no-options>
+              <span class="custom-no-options">Nenhuma opção encontrada</span>
+            </template>
+          </v-select>
+        </div>
       </div>
 
       <button class="swap-button" @click="swapConversion" aria-label="Trocar a conversão">
         <img src="../assets/icon-swap.svg" alt="Icone de troca" />
       </button>
 
-      <div class="fieldConverted">
-        <div class="resultConverted">
-          {{ valorConvertido }}
+      <div class="fieldConverted campo">
+        <div for="valorParaConverter" class="label">Convertido</div>
+        <div class="label-wrapper">
+          <div class="resultConverted">
+            {{ valorConvertido }}
+          </div>
+  
+          <v-select
+            id="selectCurrency"
+            :options="currencyValues"
+            label="text"
+            :reduce="(currencyValue) => currencyValue.flag"
+            :selectable="(currencyValue) => currencyValue.flag !== moedaConvertida && currencyValue.flag !== moedaParaConverter"
+            v-model="moedaConvertida"
+            :clearable="false"
+          >
+            <template #selected-option="{ image, text }">
+              <img :src="image" :alt="('Icone da bandeira do ' + text)" />
+              <span>{{ text }}</span>
+            </template>
+            <template #option="{ image, text }">
+              <img :src="image" :alt="('Icone da bandeira do ' + text)" />
+              <span>{{ text }}</span>
+            </template>
+          </v-select>
         </div>
-
-        <v-select
-          id="selectCurrency"
-          :options="currencyValues"
-          label="text"
-          :reduce="(currencyValue) => currencyValue.flag"
-          :selectable="(currencyValue) => currencyValue.flag !== moedaConvertida && currencyValue.flag !== moedaParaConverter"
-          v-model="moedaConvertida"
-          :clearable="false"
-        >
-          <template #selected-option="{ image, text }">
-            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
-            <span>{{ text }}</span>
-          </template>
-          <template #option="{ image, text }">
-            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
-            <span>{{ text }}</span>
-          </template>
-        </v-select>
       </div>
     </div>
   </main>
@@ -182,7 +189,8 @@ main {
 }
 .subtitle {
   font-size: 18px;
-  margin-bottom: 32px;
+  margin-top: 4px;
+  margin-bottom: 56px;
   color: #E2E2E2;
 }
 .inputSkeleton {
@@ -198,6 +206,15 @@ main {
   align-items: center;
   gap: 20px;
 }
+.campo {
+  position: relative;
+}
+.campo .label {
+  font-size: 14px;
+  position: absolute;
+  top: -28px;
+  color: #FFF;
+}
 .fieldToConvert input {
   padding-left: 16px;
   font-size: 18px;
@@ -208,6 +225,9 @@ main {
   border: solid 1px #FFF;
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
+}
+.label-wrapper {
+  display: flex;
 }
 .resultConverted {
   display: flex;
@@ -222,6 +242,7 @@ main {
   padding-left: 16px;
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
+  overflow: hidden;
 }
 .swap-button {
   display: flex;
