@@ -2,7 +2,6 @@
   <main>
     <div class="text">
       <h1 class="title">Converta aqui</h1>
-  
       <p class="subtitle">Digite o valor a ser convertido e escolha a moeda para conversão</p>
     </div>
 
@@ -11,7 +10,10 @@
         <input
           type="number"
           autocomplete="off"
-          v-model="valorParaConverter" 
+          v-model="valorParaConverter"
+          min="0"
+          onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"
+          aria-label="Valor a ser convertido"
         />
 
         <v-select
@@ -24,27 +26,21 @@
           :clearable="false"
         >
           <template #selected-option="{ image, text }">
-            <img :src="image" :alt="('Icone da badeira do ', text)" />
+            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
             <span>{{ text }}</span>
           </template>
-
           <template #option="{ image, text }">
-            <img
-              :src="image"
-              :alt="('Icone da badeira do ', text)" />
+            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
             <span>{{ text }}</span>
           </template>
-
           <template #no-options>
-            <span class="custom-no-options">
-              Nenhuma opção encontrada
-            </span>
+            <span class="custom-no-options">Nenhuma opção encontrada</span>
           </template>
         </v-select>
       </div>
 
       <button class="swap-button" @click="swapConversion" aria-label="Trocar a conversão">
-        <img src="../assets/icon-swap.svg" alt="Icone de troca">
+        <img src="../assets/icon-swap.svg" alt="Icone de troca" />
       </button>
 
       <div class="fieldConverted">
@@ -62,16 +58,11 @@
           :clearable="false"
         >
           <template #selected-option="{ image, text }">
-            <img
-              :src="image"
-              :alt="('Icone da badeira do ', text)" />
+            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
             <span>{{ text }}</span>
           </template>
-
           <template #option="{ image, text }">
-            <img
-              :src="image"
-              :alt="('Icone da badeira do ', text)" />
+            <img :src="image" :alt="('Icone da bandeira do ' + text)" />
             <span>{{ text }}</span>
           </template>
         </v-select>
@@ -84,6 +75,12 @@
 import { onMounted, ref, watch } from "vue";
 import api from "../service/api.js";
 
+const isLoading = ref(false);
+const valorParaConverter = ref(1);
+const moedaParaConverter = ref("USD");
+const moedaConvertida = ref("BRL");
+const valorConvertido = ref("0");
+
 const currencyValues = ref([
   { id: 1, flag: "BRL", text: "Real", image: "https://flagcdn.com/br.svg" },
   { id: 2, flag: "USD", text: "Dolar", image: "https://flagcdn.com/us.svg" },
@@ -92,92 +89,77 @@ const currencyValues = ref([
   { id: 5, flag: "ARS", text: "Peso Argentino", image: "https://flagcdn.com/ar.svg" },
 ]);
 
-const valorParaConverter = ref(1);
-const valorConvertido = ref(0);
-let valorDaTaxa = null;
-let moedaParaConverter = ref("USD");
-let moedaConvertida = ref("BRL");
+const estadoConversao = ref({
+  valorParaConverter: 1,
+  moedaParaConverter: "USD",
+  moedaConvertida: "BRL",
+  valorConvertido: "0",
+  taxa: null,
+});
 
-async function fetchAPI(
-  valorParaConverter,
-  moedaConvertida,
-  moedaParaConverter
-) {
-  try {
-    if (moedaParaConverter && moedaConvertida) {
-      const response = await api.get(moedaParaConverter);
+watch(valorParaConverter, (novoValor) => {
+  estadoConversao.value.valorParaConverter = novoValor;
+});
+watch(moedaParaConverter, (novoValor) => {
+  estadoConversao.value.moedaParaConverter = novoValor;
+});
+watch(moedaConvertida, (novoValor) => {
+  estadoConversao.value.moedaConvertida = novoValor;
+});
+watch(() => estadoConversao.value.valorConvertido, (novoValor) => {
+  valorConvertido.value = novoValor;
+});
 
-      valorDaTaxa = response.data.rates[moedaConvertida];
-      // valorDaTaxa = response.data.conversion_rates[moedaParaConverter];
-
-      const resultado = truncarComCasaExtra(valorDaTaxa * valorParaConverter);
-      valorConvertido.value = resultado;
-    }
-  } catch (error) {
-    console.error("Erro ao buscar moedas: ", error);
-  }
-}
-
-function truncarComCasaExtra(valor) {
-  // Converte o número para string
-  let str = valor.toString();
-  
-  // Trata notação científica, se necessário
-  if (str.includes('e')) {
-    str = valor.toFixed(15).replace(/0+$/, '');
-  }
-  
-  // Se não houver ponto decimal, adiciona ",00"
-  if (!str.includes('.')) {
-    return str + ',00';
-  }
-  
-  // Divide em parte inteira e decimal
-  let [parteInteira, parteDecimal] = str.split('.');
-  
-  // Determina a parte decimal final
-  let decimalFinal;
-  if (parteDecimal.length <= 1) {
-    // Para 0 ou 1 casa decimal, completa com zeros até 2 casas
-    decimalFinal = parteDecimal.padEnd(2, '0');
-  } else {
-    // Para 2 ou mais casas, remove o último dígito e garante pelo menos 2 casas
-    decimalFinal = parteDecimal.slice(0, -1).padEnd(2, '0');
-  }
-  
-  // Retorna o número formatado com vírgula
-  return `${parteInteira},${decimalFinal}`;
+function formatarNumero(valor) {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 5,
+  }).format(valor);
 }
 
 function swapConversion() {
-  [moedaConvertida.value, moedaParaConverter.value] = [moedaParaConverter.value, moedaConvertida.value]
+  [moedaConvertida.value, moedaParaConverter.value] = [moedaParaConverter.value, moedaConvertida.value];
 }
 
 watch(
-  [
-    valorParaConverter,
-    () => moedaConvertida.value,
-    () => moedaParaConverter.value,
-  ],
-  ([
-    newValorParaConverter,
-    newmoedaConvertida,
-    newmoedaParaConverter,
-  ]) => {
-    fetchAPI(
-      newValorParaConverter,
-      newmoedaConvertida,
-      newmoedaParaConverter
-    );
+  [() => moedaConvertida.value, () => moedaParaConverter.value],
+  async ([novaMoedaConvertida, novaMoedaParaConverter]) => {
+    await fetchTaxa(novaMoedaConvertida, novaMoedaParaConverter);
+    calcularValorConvertido();
   }
 );
 
-onMounted(() => {
-  fetchAPI(
-    valorParaConverter.value,
-    moedaConvertida.value,
-    moedaParaConverter.value
-  );
+watch(valorParaConverter, () => {
+  calcularValorConvertido();
+});
+
+async function fetchTaxa(moedaConvertida, moedaParaConverter) {
+  try {
+    const response = await api.get(moedaParaConverter);
+    estadoConversao.value.taxa = response.data.rates[moedaConvertida];
+  } catch (error) {
+    console.error("Erro ao buscar taxa:", error);
+    estadoConversao.value.taxa = null;
+  } 
+}
+
+function calcularValorConvertido() {
+  if (estadoConversao.value.taxa !== null) {
+    const valorNumerico = parseFloat(estadoConversao.value.valorParaConverter);
+    if (!isNaN(valorNumerico)) {
+      const resultado = valorNumerico * estadoConversao.value.taxa;
+      estadoConversao.value.valorConvertido = formatarNumero(resultado);
+    } else {
+      estadoConversao.value.valorConvertido = "0";
+    }
+  } else {
+    estadoConversao.value.valorConvertido = "0";
+  }
+}
+
+onMounted(async () => {
+  await fetchTaxa(estadoConversao.value.moedaConvertida, estadoConversao.value.moedaParaConverter);
+  calcularValorConvertido();
 });
 </script>
 
@@ -196,10 +178,20 @@ main {
 .title {
   font-size: 34px;
   line-height: normal;
+  color: #E2E2E2;
 }
 .subtitle {
   font-size: 18px;
   margin-bottom: 32px;
+  color: #E2E2E2;
+}
+.inputSkeleton {
+  max-width: 398px;
+  width: 398px;
+  height: 58px;
+  border-radius: 4px;
+  background: #0C0C0C;
+  border: solid 1px #FFF;
 }
 .content {
   display: flex;
@@ -290,7 +282,7 @@ main {
 }
 @media (max-width: 405px) {
   main {
-    padding: 16px;
+    padding: 14px;
   }
   .fieldToConvert input, 
   .resultConverted {
@@ -367,5 +359,15 @@ main {
   .vs__selected-options {
     height: 54px;
   }
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance:textfield;
 }
 </style>
