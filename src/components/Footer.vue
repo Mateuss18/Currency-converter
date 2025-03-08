@@ -10,7 +10,9 @@ footer {
   bottom: 20px;
   right: 22px;
 }
-
+footer a {
+  color: #80a6ff;
+}
 @media (max-width: 550px) {
   footer {
     font-size: 14px;
