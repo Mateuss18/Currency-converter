@@ -12,21 +12,17 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
 }
-
 body {
   display: flex;
   place-items: center;
   background-color: #111111;
   height: 100vh;
 }
-
-
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -45,11 +41,6 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
-
-.card {
-  padding: 2em;
-}
-
 #app {
   display: flex;
   align-items: center;
@@ -61,17 +52,4 @@ button:focus-visible {
   padding: 0 20px;
   text-align: center;
   position: relative;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }
