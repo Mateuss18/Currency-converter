@@ -11,11 +11,11 @@
         <div class="label-wrapper">
           <input
             id="valorParaConverter"
-            type="number"
+            type="text"
             autocomplete="off"
             v-model="valorParaConverter"
             min="0"
-            onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"
+            @keypress="validateInput"
             aria-label="Valor a ser convertido"
           />
   
@@ -82,7 +82,6 @@
 import { onMounted, ref, watch } from "vue";
 import api from "../service/api.js";
 
-const isLoading = ref(false);
 const valorParaConverter = ref(1);
 const moedaParaConverter = ref("USD");
 const moedaConvertida = ref("BRL");
@@ -105,9 +104,12 @@ const estadoConversao = ref({
 });
 
 watch(valorParaConverter, (novoValor) => {
-  estadoConversao.value.valorParaConverter = novoValor;
+  const valorNormalizado = novoValor.replace(",", "."); 
+  
+  estadoConversao.value.valorParaConverter = valorNormalizado; 
+  calcularValorConvertido();
 });
-watch(moedaParaConverter, (novoValor) => {
+watch(moedaParaConverter, (novoValor) => {  
   estadoConversao.value.moedaParaConverter = novoValor;
 });
 watch(moedaConvertida, (novoValor) => {
@@ -118,14 +120,21 @@ watch(() => estadoConversao.value.valorConvertido, (novoValor) => {
 });
 
 function formatarNumero(valor) {
+  const casasDecimais = valor >= 1 ? 2 : 5;
+  const fator = Math.pow(10, casasDecimais);
+  const valorCortado = Math.floor(valor * fator) / fator;
+
   return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 5,
-  }).format(valor);
+    minimumFractionDigits: casasDecimais,
+    maximumFractionDigits: casasDecimais,
+  }).format(valorCortado);
 }
 
 function swapConversion() {
-  [moedaConvertida.value, moedaParaConverter.value] = [moedaParaConverter.value, moedaConvertida.value];
+  [moedaConvertida.value, moedaParaConverter.value] = [
+    moedaParaConverter.value, 
+    moedaConvertida.value
+  ];
 }
 
 watch(
@@ -136,18 +145,27 @@ watch(
   }
 );
 
-watch(valorParaConverter, () => {
-  calcularValorConvertido();
-});
-
 async function fetchTaxa(moedaConvertida, moedaParaConverter) {
   try {
-    const response = await api.get(moedaParaConverter);
+    const response = await api.get(`?base=${moedaParaConverter}`);
+    // const response = await api.get(moedaParaConverter);
+    
+    // estadoConversao.value.taxa = response.data.conversion_rates[moedaConvertida];
     estadoConversao.value.taxa = response.data.rates[moedaConvertida];
   } catch (error) {
     console.error("Erro ao buscar taxa:", error);
+    if (error.response && error.response.status === 404) {
+        console.error("Moeda não encontrada:", error); 
+        alert('Moeda não encontrada') 
+    } else if (error.response && error.response.status === 400) {
+        console.error("Requisição inválida:", error); 
+        alert('Requisição inválida') 
+    } else {
+        console.error("Erro ao buscar taxa:", error);
+        alert('Erro ao buscar taxa'); 
+    }
     estadoConversao.value.taxa = null;
-  } 
+  }
 }
 
 function calcularValorConvertido() {
@@ -155,6 +173,10 @@ function calcularValorConvertido() {
     const valorNumerico = parseFloat(estadoConversao.value.valorParaConverter);
     if (!isNaN(valorNumerico)) {
       const resultado = valorNumerico * estadoConversao.value.taxa;
+      // console.log(resultado.toString());
+
+      // console.log(resultado);
+      
       estadoConversao.value.valorConvertido = formatarNumero(resultado);
     } else {
       estadoConversao.value.valorConvertido = "0";
@@ -168,6 +190,32 @@ onMounted(async () => {
   await fetchTaxa(estadoConversao.value.moedaConvertida, estadoConversao.value.moedaParaConverter);
   calcularValorConvertido();
 });
+
+function validateInput(event) {
+  const charCode = event.charCode;
+  const input = event.target.value;
+  const commaCount = (input.match(/,/g) || []).length;
+
+  if (
+    [8, 9, 27, 13, 46].indexOf(event.keyCode) !== -1 ||
+    (event.keyCode === 65 && event.ctrlKey === true) || // Ctrl+A
+    (event.keyCode === 67 && event.ctrlKey === true) || // Ctrl+C
+    (event.keyCode === 88 && event.ctrlKey === true) || // Ctrl+X
+    (event.keyCode >= 35 && event.keyCode <= 39) // Home, End, Left, Right
+  ) {
+    return true;
+  }
+  if ((charCode >= 48 && charCode <= 57) || charCode === 44) {
+    if (charCode === 44 && commaCount >= 1) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  }
+
+  event.preventDefault();
+  return false;
+}
 </script>
 
 <style scoped>
